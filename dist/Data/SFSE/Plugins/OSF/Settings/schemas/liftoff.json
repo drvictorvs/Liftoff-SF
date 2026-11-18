@@ -12,7 +12,11 @@
         "hint": "Hex color in #RRGGBB format." },
       { "key": "showStatus", "label": "Show loading status", "type": "bool", "default": true,
         "hint": "Show the file currently being loaded, such as Loading plugin Starfield.esm." },
-      { "key": "showPercent", "label": "Show percentage", "type": "bool", "default": true }
+      { "key": "showPercent", "label": "Show percentage", "type": "bool", "default": true },
+      { "key": "useStarfieldFont", "label": "Use Starfield font", "type": "bool", "default": false,
+        "hint": "Use Futura PT if it is installed in Windows; otherwise the overlay uses Segoe UI." },
+      { "key": "transparentBackground", "label": "Transparent background", "type": "bool", "default": false,
+        "hint": "Hide the panel and border while keeping the text and progress bar visible." }
     ],
     "Behaviour": [
       { "key": "stayOnTop", "label": "Keep overlay on top", "type": "bool", "default": true,

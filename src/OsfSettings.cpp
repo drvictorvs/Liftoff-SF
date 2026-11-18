@@ -22,7 +22,7 @@
 namespace
 {
 	constexpr ULONGLONG kPollIntervalMs = 2000;
-	constexpr std::size_t kSettingCount = 18;
+	constexpr std::size_t kSettingCount = 20;
 
 	struct Setting
 	{
@@ -35,6 +35,8 @@ namespace
 		{ L"Look", L"BarColor" },
 		{ L"Look", L"ShowStatus" },
 		{ L"Look", L"ShowPercent" },
+		{ L"Look", L"UseStarfieldFont" },
+		{ L"Look", L"TransparentBackground" },
 		{ L"Behaviour", L"StayOnTop" },
 		{ L"Behaviour", L"FadeMs" },
 		{ L"Behaviour", L"TimeoutSeconds" },
@@ -104,7 +106,7 @@ namespace
 			return false;
 		}
 
-		constexpr std::array<std::size_t, 7> booleanIndices{ 0, 2, 3, 4, 8, 9, 10 };
+		constexpr std::array<std::size_t, 9> booleanIndices{ 0, 2, 3, 4, 5, 6, 10, 11, 12 };
 		for (const std::size_t i : booleanIndices) {
 			if (!IsBoolean(fields[i])) {
 				Log::Write("OSF settings returned an invalid boolean for %s", Log::Narrow(kSettings[i].key).c_str());
@@ -112,7 +114,7 @@ namespace
 			}
 		}
 
-		constexpr std::array<std::size_t, 9> integerIndices{ 5, 6, 11, 12, 13, 14, 15, 16, 17 };
+		constexpr std::array<std::size_t, 9> integerIndices{ 7, 8, 13, 14, 15, 16, 17, 18, 19 };
 		for (const std::size_t i : integerIndices) {
 			if (!IsInteger(fields[i])) {
 				Log::Write("OSF settings returned an invalid integer for %s", Log::Narrow(kSettings[i].key).c_str());

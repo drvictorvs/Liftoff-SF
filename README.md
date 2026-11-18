@@ -46,6 +46,8 @@ The package also includes an OSF Settings schema at
 when OSF Settings is installed. The DLL calls the global Papyrus bridge without a quest or plugin
 file, polls for OSF changes, and writes them to `Liftoff.ini`. Changes take effect next launch.
 After changing OSF values, leave the game running for up to two seconds so the bridge can save them.
+The look settings include a transparent panel option and an optional Futura PT font choice; the
+font must be installed in Windows, or the overlay falls back to Segoe UI.
 Without the compiled `.pex` or OSF Settings, Liftoff continues to use `Liftoff.ini` normally.
 No Liftoff `.esm` or quest attachment is needed: the DLL invokes the script's global function
 through the Papyrus VM. The `.psc` source and compiler helper are included in the source package.

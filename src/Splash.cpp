@@ -46,6 +46,12 @@ namespace
 	constexpr int      kOverlayMargin = 24;
 	constexpr ULONGLONG kOverlayHoldMs = 5000;
 
+	void SetOpacity(BYTE alpha)
+	{
+		const DWORD flags = LWA_ALPHA | (g.cfg.transparentBackground ? LWA_COLORKEY : 0);
+		SetLayeredWindowAttributes(g.hwnd, RGB(0, 0, 0), alpha, flags);
+	}
+
 	// ------------------------------------------------------------------ one frame
 
 	void DrawFrame(HDC hdc)
@@ -57,14 +63,20 @@ namespace
 		gfx.SetSmoothingMode(SmoothingModeAntiAlias);
 		gfx.SetTextRenderingHint(TextRenderingHintAntiAliasGridFit);
 
-		gfx.Clear(Color(0, 0, 0, 0));
-		SolidBrush panel(Color(242, 8, 12, 22));
-		Pen border(Color(110, 150, 180, 210), 1.0f);
-		gfx.FillRectangle(&panel, 0.f, 0.f, w, h);
-		gfx.DrawRectangle(&border, 0.5f, 0.5f, w - 1, h - 1);
+		if (g.cfg.transparentBackground) {
+			gfx.Clear(Color(255, 0, 0, 0));
+		} else {
+			gfx.Clear(Color(0, 0, 0, 0));
+			SolidBrush panel(Color(242, 8, 12, 22));
+			Pen border(Color(110, 150, 180, 210), 1.0f);
+			gfx.FillRectangle(&panel, 0.f, 0.f, w, h);
+			gfx.DrawRectangle(&border, 0.5f, 0.5f, w - 1, h - 1);
+		}
 
+		FontFamily starfield(L"Futura PT");
 		FontFamily segoe(L"Segoe UI");
-		const FontFamily* family = segoe.IsAvailable() ? &segoe : FontFamily::GenericSansSerif();
+		const FontFamily* family = g.cfg.useStarfieldFont && starfield.IsAvailable() ? &starfield :
+		                           segoe.IsAvailable() ? &segoe : FontFamily::GenericSansSerif();
 		Font font(family, 16.f, FontStyleRegular, UnitPixel);
 		SolidBrush textBrush(Color(245, 235, 242, 250));
 		StringFormat left;
@@ -176,7 +188,7 @@ namespace
 		if (progress.saveLoading && g.phase != Phase::SaveLoading) {
 			Log::Write("save-load status received by splash; showing overlay");
 			g.alpha = 255;
-			SetLayeredWindowAttributes(g.hwnd, 0, g.alpha, LWA_ALPHA);
+			SetOpacity(g.alpha);
 			ShowWindow(g.hwnd, SW_SHOWNOACTIVATE);
 			SetPhase(Phase::SaveLoading);
 		}
@@ -228,7 +240,7 @@ namespace
 				return;
 			}
 			g.alpha = BYTE(255 * (1.0 - t));
-			SetLayeredWindowAttributes(g.hwnd, 0, g.alpha, LWA_ALPHA);
+			SetOpacity(g.alpha);
 			break;
 		}
 		case Phase::Overlay:
@@ -323,7 +335,12 @@ namespace
 			return 1;
 		}
 
-		SetLayeredWindowAttributes(g.hwnd, 0, 255, LWA_ALPHA);
+		if (g.cfg.useStarfieldFont) {
+			FontFamily starfield(L"Futura PT");
+			if (!starfield.IsAvailable())
+				Log::Write("Futura PT is not installed; using Segoe UI instead");
+		}
+		SetOpacity(255);
 		ShowWindow(g.hwnd, SW_SHOWNOACTIVATE);
 		SetTimer(g.hwnd, kTimerId, kFrameMs, nullptr);
 		Log::Write("splash shown (%dx%d)", g.width, g.height);

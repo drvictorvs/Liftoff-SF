@@ -72,6 +72,8 @@ Config LoadConfig(const std::wstring& ini)
 	c.barColor    = ParseColor(ReadString(ini, L"Look", L"BarColor", L""), c.barColor);
 	c.showStatus  = ReadInt(ini, L"Look", L"ShowStatus", 1) != 0;
 	c.showPercent = ReadInt(ini, L"Look", L"ShowPercent", 1) != 0;
+	c.useStarfieldFont = ReadInt(ini, L"Look", L"UseStarfieldFont", 0) != 0;
+	c.transparentBackground = ReadInt(ini, L"Look", L"TransparentBackground", 0) != 0;
 
 	c.stayOnTop         = ReadInt(ini, L"Behaviour", L"StayOnTop", 1) != 0;
 	c.fadeMs            = ReadInt(ini, L"Behaviour", L"FadeMs", c.fadeMs);

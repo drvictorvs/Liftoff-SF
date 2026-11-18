@@ -13,6 +13,8 @@ struct Config
 	COLORREF     barColor    = RGB(79, 195, 247);
 	bool         showStatus  = true; // "Loading plugin Starfield.esm"
 	bool         showPercent = true;
+	bool         useStarfieldFont = false;
+	bool         transparentBackground = false;
 
 	// Behaviour
 	bool stayOnTop         = true;

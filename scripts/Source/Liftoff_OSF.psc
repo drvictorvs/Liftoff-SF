@@ -16,6 +16,8 @@ String Function ReadSettings() global
 	settings = settings + "|" + OSFSettings.GetString("liftoff", "barColor", "#4FC3F7")
 	settings = settings + "|" + BoolValue(OSFSettings.GetBool("liftoff", "showStatus", True))
 	settings = settings + "|" + BoolValue(OSFSettings.GetBool("liftoff", "showPercent", True))
+	settings = settings + "|" + BoolValue(OSFSettings.GetBool("liftoff", "useStarfieldFont", False))
+	settings = settings + "|" + BoolValue(OSFSettings.GetBool("liftoff", "transparentBackground", False))
 	settings = settings + "|" + BoolValue(OSFSettings.GetBool("liftoff", "stayOnTop", True))
 	settings = settings + "|" + OSFSettings.GetInt("liftoff", "fadeMs", 500)
 	settings = settings + "|" + OSFSettings.GetInt("liftoff", "timeoutSeconds", 240)
