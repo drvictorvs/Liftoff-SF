@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "title": "Liftoff",
+  "description": "Startup progress overlay and loading diagnostics. Options correspond to Liftoff's configuration.",
+  "groups": {
+    "General": [
+      { "key": "enabled", "label": "Enable Liftoff", "type": "bool", "default": true,
+        "hint": "Turn the plugin off without uninstalling it." }
+    ],
+    "Look": [
+      { "key": "barColor", "label": "Progress bar color", "type": "string", "default": "#4FC3F7", "maxLength": 7,
+        "hint": "Hex color in #RRGGBB format." },
+      { "key": "showStatus", "label": "Show loading status", "type": "bool", "default": true,
+        "hint": "Show the file currently being loaded, such as Loading plugin Starfield.esm." },
+      { "key": "showPercent", "label": "Show percentage", "type": "bool", "default": true }
+    ],
+    "Behaviour": [
+      { "key": "stayOnTop", "label": "Keep overlay on top", "type": "bool", "default": true,
+        "hint": "Keep the overlay above the game window in windowed and borderless modes." },
+      { "key": "fadeMs", "label": "Fade duration (ms)", "type": "int", "default": 500 },
+      { "key": "timeoutSeconds", "label": "Overlay timeout (s)", "type": "int", "default": 240,
+        "hint": "Safety timeout that closes the overlay if the load-complete signal never arrives." }
+    ],
+    "Tracking": [
+      { "key": "trackedExtensions", "label": "Tracked file extensions", "type": "string", "default": ".esm,.esp,.esl,.ba2", "maxLength": 256,
+        "hint": "Comma-, semicolon-, or space-separated extensions. A leading dot is optional." },
+      { "key": "logAllFiles", "label": "Log every opened file", "type": "bool", "default": false,
+        "hint": "Debug option. Creates a large log and may slow startup." }
+    ],
+    "File diagnostics": [
+      { "key": "logFiles", "label": "Log file-open durations", "type": "bool", "default": true },
+      { "key": "logFailedOpens", "label": "Include failed file opens", "type": "bool", "default": false },
+      { "key": "minOpenMs", "label": "Minimum open duration (ms)", "type": "int", "default": 0, "min": 0, "max": 60000,
+        "hint": "Only log file opens that take at least this long." },
+      { "key": "maxFileLines", "label": "Maximum file log lines", "type": "int", "default": 100000, "min": 0, "max": 5000000,
+        "hint": "Set to 0 to disable the limit." }
+    ],
+    "Watchdog": [
+      { "key": "stallSeconds", "label": "Stall threshold (s)", "type": "int", "default": 3, "min": 1, "max": 600,
+        "hint": "Capture thread stacks if the game stops responding for this long." },
+      { "key": "sampleSeconds", "label": "Save-load sample interval (s)", "type": "int", "default": 5, "min": 1, "max": 600 },
+      { "key": "maxDumps", "label": "Maximum stack captures", "type": "int", "default": 60, "min": 1, "max": 1000,
+        "hint": "Maximum captures per save-load or stall episode." },
+      { "key": "stackDepth", "label": "Maximum stack frames", "type": "int", "default": 32, "min": 4, "max": 64 },
+      { "key": "lookBackSeconds", "label": "Pre-load history (s)", "type": "int", "default": 10, "min": 0, "max": 60,
+        "hint": "Capture this many seconds of activity leading up to a save load." }
+    ]
+  }
+}

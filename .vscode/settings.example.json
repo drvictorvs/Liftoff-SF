@@ -1,0 +1,8 @@
+{
+	// Copy this file to settings.json and set your Starfield folder.
+	"cmake.configureSettings": {
+		"STARFIELD_DIR": ""
+	},
+	"cmake.buildDirectory": "${workspaceFolder}/build",
+	"C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools"
+}

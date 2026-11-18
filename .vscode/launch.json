@@ -1,0 +1,13 @@
+{
+	// Optional, for later: attach the debugger to a running Starfield.
+	// Start the game with sfse_loader.exe, then Run and Debug -> "Attach to Starfield".
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "Attach to Starfield",
+			"type": "cppvsdbg",
+			"request": "attach",
+			"processId": "${command:pickProcess}"
+		}
+	]
+}
