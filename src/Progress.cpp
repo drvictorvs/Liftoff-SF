@@ -32,6 +32,7 @@ namespace
 	double       g_shownFraction   = 0;  // what the bar displays (never goes backwards)
 	bool         g_done            = false;
 	bool         g_saveLoading     = false;
+	int          g_saveLoadsFinished = 0;
 	std::wstring g_status          = L"Starting";
 
 	double ElapsedMs()
@@ -173,6 +174,7 @@ namespace Progress
 		if (!g_saveLoading)
 			return;
 		g_saveLoading = false;
+		++g_saveLoadsFinished;
 		g_status = L"Save loaded";
 		Log::Write("save load finished");
 	}
@@ -185,6 +187,7 @@ namespace Progress
 		s.status     = g_status;
 		s.done       = g_done;
 		s.saveLoading = g_saveLoading;
+		s.saveLoadsFinished = g_saveLoadsFinished;
 		s.calibrated = g_previousTotalMs > 0;
 
 		if (g_saveLoading)

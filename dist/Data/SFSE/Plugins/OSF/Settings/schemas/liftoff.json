@@ -8,19 +8,29 @@
         "hint": "Turn the plugin off without uninstalling it." }
     ],
     "Look": [
-      { "key": "barColor", "label": "Progress bar color", "type": "string", "default": "#4FC3F7", "maxLength": 7,
+      { "key": "barColor", "label": "Progress bar color", "type": "string", "default": "#FFFFFF", "maxLength": 7,
         "hint": "Hex color in #RRGGBB format." },
+      { "key": "panelColor", "label": "Panel color", "type": "string", "default": "#5D5D5D", "maxLength": 7,
+        "hint": "Hex color in #RRGGBB format. The default matches Starfield's menu rows." },
+      { "key": "panelOpacity", "label": "Panel opacity (%)", "type": "int", "default": 100, "min": 0, "max": 100 },
+      { "key": "textColor", "label": "Text color", "type": "string", "default": "#FFFFFF", "maxLength": 7 },
+      { "key": "fontSize", "label": "Text size (px)", "type": "int", "default": 20, "min": 10, "max": 48,
+        "hint": "The panel's size follows the text size." },
+      { "key": "uppercase", "label": "Capital letters", "type": "bool", "default": true,
+        "hint": "Show the text in capitals, like the game's menus." },
       { "key": "showStatus", "label": "Show loading status", "type": "bool", "default": true,
         "hint": "Show the file currently being loaded, such as Loading plugin Starfield.esm." },
       { "key": "showPercent", "label": "Show percentage", "type": "bool", "default": true },
-      { "key": "useStarfieldFont", "label": "Use Starfield font", "type": "bool", "default": false,
-        "hint": "Use Futura PT if it is installed in Windows; otherwise the overlay uses Segoe UI." },
+      { "key": "useStarfieldFont", "label": "Use Starfield-style font", "type": "bool", "default": true,
+        "hint": "The game's menu font, NB Architekt, if installed in Windows; otherwise Bahnschrift, a similar font included in Windows 10 and 11. Off uses Segoe UI." },
       { "key": "transparentBackground", "label": "Transparent background", "type": "bool", "default": false,
         "hint": "Hide the panel and border while keeping the text and progress bar visible." }
     ],
     "Behaviour": [
       { "key": "stayOnTop", "label": "Keep overlay on top", "type": "bool", "default": true,
         "hint": "Keep the overlay above the game window in windowed and borderless modes." },
+      { "key": "showOnSaveLoad", "label": "Show on save loads", "type": "int", "default": 1, "min": 0, "max": 2,
+        "hint": "0 = never (startup only), 1 = only the first save load (from the main menu), 2 = every save load." },
       { "key": "fadeMs", "label": "Fade duration (ms)", "type": "int", "default": 500 },
       { "key": "timeoutSeconds", "label": "Overlay timeout (s)", "type": "int", "default": 240,
         "hint": "Safety timeout that closes the overlay if the load-complete signal never arrives." }

@@ -72,10 +72,16 @@ Config LoadConfig(const std::wstring& ini)
 	c.barColor    = ParseColor(ReadString(ini, L"Look", L"BarColor", L""), c.barColor);
 	c.showStatus  = ReadInt(ini, L"Look", L"ShowStatus", 1) != 0;
 	c.showPercent = ReadInt(ini, L"Look", L"ShowPercent", 1) != 0;
-	c.useStarfieldFont = ReadInt(ini, L"Look", L"UseStarfieldFont", 0) != 0;
+	c.useStarfieldFont = ReadInt(ini, L"Look", L"UseStarfieldFont", 1) != 0;
+	c.panelColor  = ParseColor(ReadString(ini, L"Look", L"PanelColor", L""), c.panelColor);
+	c.panelOpacity = ReadBoundedInt(ini, L"Look", L"PanelOpacity", c.panelOpacity, 0, 100);
+	c.textColor   = ParseColor(ReadString(ini, L"Look", L"TextColor", L""), c.textColor);
+	c.fontSize    = ReadBoundedInt(ini, L"Look", L"FontSize", c.fontSize, 10, 48);
+	c.uppercase   = ReadInt(ini, L"Look", L"Uppercase", 1) != 0;
 	c.transparentBackground = ReadInt(ini, L"Look", L"TransparentBackground", 0) != 0;
 
 	c.stayOnTop         = ReadInt(ini, L"Behaviour", L"StayOnTop", 1) != 0;
+	c.showOnSaveLoad    = ReadBoundedInt(ini, L"Behaviour", L"ShowOnSaveLoad", c.showOnSaveLoad, 0, 2);
 	c.fadeMs            = ReadInt(ini, L"Behaviour", L"FadeMs", c.fadeMs);
 	c.timeoutSeconds    = ReadInt(ini, L"Behaviour", L"TimeoutSeconds", c.timeoutSeconds);
 

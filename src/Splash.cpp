@@ -31,6 +31,7 @@ namespace
 		HWND                    gameWindow = nullptr;
 		bool                    gameWindowSeen = false;
 		BYTE                    alpha = 255;
+		bool                    inSaveLoad = false;  // a save load is running, shown or not
 	};
 
 	// Only ever touched by the splash thread (after Start copies the config).
@@ -42,7 +43,6 @@ namespace
 	constexpr UINT     kFrameMs  = 33;  // ~30 frames per second
 	constexpr double   kPi       = 3.14159265358979323846;
 	constexpr int      kOverlayWidth = 440;
-	constexpr int      kOverlayHeight = 88;
 	constexpr int      kOverlayMargin = 24;
 	constexpr ULONGLONG kOverlayHoldMs = 5000;
 
@@ -63,35 +63,57 @@ namespace
 		gfx.SetSmoothingMode(SmoothingModeAntiAlias);
 		gfx.SetTextRenderingHint(TextRenderingHintAntiAliasGridFit);
 
-		if (g.cfg.transparentBackground) {
+		const Config& c = g.cfg;
+		const float   em = float(c.fontSize);
+		if (c.transparentBackground) {
 			gfx.Clear(Color(255, 0, 0, 0));
 		} else {
+			// A flat panel, no border, like a Starfield menu row.
 			gfx.Clear(Color(0, 0, 0, 0));
-			SolidBrush panel(Color(242, 8, 12, 22));
-			Pen border(Color(110, 150, 180, 210), 1.0f);
+			const BYTE alpha = BYTE(std::clamp(c.panelOpacity, 0, 100) * 255 / 100);
+			SolidBrush panel(Color(alpha, GetRValue(c.panelColor), GetGValue(c.panelColor), GetBValue(c.panelColor)));
 			gfx.FillRectangle(&panel, 0.f, 0.f, w, h);
-			gfx.DrawRectangle(&border, 0.5f, 0.5f, w - 1, h - 1);
 		}
 
-		FontFamily starfield(L"Futura PT");
+		// The game's menu font is NB Architekt; Windows doesn't ship it, so Bahnschrift (in Windows
+		// 10 and 11, a similar square sans) stands in. Segoe UI when the Starfield font is off.
+		FontFamily architekt(L"NB Architekt");
+		FontFamily bahnschrift(L"Bahnschrift");
 		FontFamily segoe(L"Segoe UI");
-		const FontFamily* family = g.cfg.useStarfieldFont && starfield.IsAvailable() ? &starfield :
-		                           segoe.IsAvailable() ? &segoe : FontFamily::GenericSansSerif();
-		Font font(family, 16.f, FontStyleRegular, UnitPixel);
-		SolidBrush textBrush(Color(245, 235, 242, 250));
+		const FontFamily* family = FontFamily::GenericSansSerif();
+		if (c.useStarfieldFont && architekt.IsAvailable())
+			family = &architekt;
+		else if (c.useStarfieldFont && bahnschrift.IsAvailable())
+			family = &bahnschrift;
+		else if (segoe.IsAvailable())
+			family = &segoe;
+		Font font(family, em, FontStyleRegular, UnitPixel);
+		SolidBrush textBrush(Color(255, GetRValue(c.textColor), GetGValue(c.textColor), GetBValue(c.textColor)));
 		StringFormat left;
 		left.SetFormatFlags(StringFormatFlagsNoWrap);
 		left.SetTrimming(StringTrimmingEllipsisCharacter);
+		left.SetLineAlignment(StringAlignmentCenter);
 		StringFormat right;
 		right.SetAlignment(StringAlignmentFar);
 		right.SetFormatFlags(StringFormatFlagsNoWrap);
+		right.SetLineAlignment(StringAlignmentCenter);
 
-		const RectF textRow(16.f, 12.f, w - 32.f, 24.f);
+		auto shown = [&](std::wstring text) {
+			if (c.uppercase)
+				CharUpperBuffW(text.data(), DWORD(text.size()));
+			return text;
+		};
+
+		// Geometry scales with the font: at 20 px, text starts 26 px in, like the menu's rows.
+		const float padX = std::round(em * 1.3f);
+		const RectF textRow(padX, std::round(em * 0.55f), w - 2 * padX, std::round(em * 1.4f));
 		const RectF statusRect(textRow.X, textRow.Y, textRow.Width * 0.76f, textRow.Height);
-		if (g.cfg.showStatus)
-			gfx.DrawString(snap.status.c_str(), -1, &font, statusRect, &left, &textBrush);
+		if (c.showStatus) {
+			const auto status = shown(snap.status);
+			gfx.DrawString(status.c_str(), -1, &font, statusRect, &left, &textBrush);
+		}
 
-		if (g.cfg.showPercent) {
+		if (c.showPercent) {
 			wchar_t label[32];
 			if (snap.saveLoading)
 				swprintf(label, 32, L"Loading");
@@ -99,12 +121,15 @@ namespace
 				swprintf(label, 32, L"%d%%", int(snap.fraction * 100 + 0.5));
 			else
 				swprintf(label, 32, L"Measuring");
-			gfx.DrawString(label, -1, &font, textRow, &right, &textBrush);
+			const auto text = shown(label);
+			gfx.DrawString(text.c_str(), -1, &font, textRow, &right, &textBrush);
 		}
 
-		const float barX = 16.f, barY = 54.f, barW = w - 32.f, barH = 8.f;
-		SolidBrush track(Color(85, 255, 255, 255));
-		SolidBrush fill(Color(255, GetRValue(g.cfg.barColor), GetGValue(g.cfg.barColor), GetBValue(g.cfg.barColor)));
+		const float barX = padX, barW = w - 2 * padX;
+		const float barH = std::max(4.f, std::round(em * 0.3f));
+		const float barY = textRow.Y + textRow.Height + std::round(em * 0.45f);
+		SolidBrush track(Color(110, 0, 0, 0));  // a dark groove, like the gaps between menu rows
+		SolidBrush fill(Color(255, GetRValue(c.barColor), GetGValue(c.barColor), GetBValue(c.barColor)));
 		gfx.FillRectangle(&track, barX, barY, barW, barH);
 		if (!snap.saveLoading && (snap.calibrated || snap.done)) {
 			gfx.FillRectangle(&fill, barX, barY, float(barW * snap.fraction), barH);
@@ -185,17 +210,27 @@ namespace
 		const ULONGLONG now = GetTickCount64();
 		const auto progress = Progress::Get();
 
-		if (progress.saveLoading && g.phase != Phase::SaveLoading) {
-			Log::Write("save-load status received by splash; showing overlay");
-			g.alpha = 255;
-			SetOpacity(g.alpha);
-			ShowWindow(g.hwnd, SW_SHOWNOACTIVATE);
-			SetPhase(Phase::SaveLoading);
+		if (progress.saveLoading && !g.inSaveLoad) {
+			g.inSaveLoad = true;
+			// ShowOnSaveLoad: 0 never, 1 only the session's first save load, 2 every save load.
+			const bool show = g.cfg.showOnSaveLoad == 2 ||
+			                  (g.cfg.showOnSaveLoad == 1 && progress.saveLoadsFinished == 0);
+			if (show) {
+				Log::Write("save-load status received by splash; showing overlay");
+				g.alpha = 255;
+				SetOpacity(g.alpha);
+				ShowWindow(g.hwnd, SW_SHOWNOACTIVATE);
+				SetPhase(Phase::SaveLoading);
+			} else {
+				Log::Write("save-load status received by splash; overlay not shown (ShowOnSaveLoad=%d)", g.cfg.showOnSaveLoad);
+			}
 		}
-		if (!progress.saveLoading && g.phase == Phase::SaveLoading) {
+		if (!progress.saveLoading && g.inSaveLoad) {
+			g.inSaveLoad = false;
 			Log::Write("save-load status cleared by splash");
 			Watchdog::LoadFinished();
-			SetPhase(Phase::Holding);
+			if (g.phase == Phase::SaveLoading)
+				SetPhase(Phase::Holding);
 		}
 
 		HWND foundWindow = FindGameWindow();
@@ -303,8 +338,14 @@ namespace
 		}
 
 		g.startTick = GetTickCount64();
-		g.width = kOverlayWidth;
-		g.height = kOverlayHeight;
+		// Height follows the font size: text row, bar and margins (66 px at the default 20 px).
+		{
+			const float em = float(g.cfg.fontSize);
+			const float bottom = std::round(em * 0.55f) + std::round(em * 1.4f) + std::round(em * 0.45f) +
+			                     std::max(4.f, std::round(em * 0.3f)) + std::round(em * 0.6f);
+			g.width = std::max(kOverlayWidth, int(std::round(em * 22.f)));
+			g.height = int(bottom);
+		}
 		g.backbuffer = std::make_unique<Bitmap>(g.width, g.height, PixelFormat32bppARGB);
 
 		WNDCLASSEXW wc{};

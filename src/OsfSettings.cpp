@@ -22,7 +22,7 @@
 namespace
 {
 	constexpr ULONGLONG kPollIntervalMs = 2000;
-	constexpr std::size_t kSettingCount = 20;
+	constexpr std::size_t kSettingCount = 26;
 
 	struct Setting
 	{
@@ -51,6 +51,13 @@ namespace
 		{ L"Watchdog", L"MaxDumps" },
 		{ L"Watchdog", L"StackDepth" },
 		{ L"Watchdog", L"LookBackSeconds" },
+		// Added after the first 20, in the order Liftoff_OSF.psc returns them.
+		{ L"Look", L"PanelColor" },
+		{ L"Look", L"PanelOpacity" },
+		{ L"Look", L"TextColor" },
+		{ L"Look", L"FontSize" },
+		{ L"Look", L"Uppercase" },
+		{ L"Behaviour", L"ShowOnSaveLoad" },
 	} };
 
 	std::wstring g_iniPath;
@@ -106,7 +113,7 @@ namespace
 			return false;
 		}
 
-		constexpr std::array<std::size_t, 9> booleanIndices{ 0, 2, 3, 4, 5, 6, 10, 11, 12 };
+		constexpr std::array<std::size_t, 10> booleanIndices{ 0, 2, 3, 4, 5, 6, 10, 11, 12, 24 };
 		for (const std::size_t i : booleanIndices) {
 			if (!IsBoolean(fields[i])) {
 				Log::Write("OSF settings returned an invalid boolean for %s", Log::Narrow(kSettings[i].key).c_str());
@@ -114,7 +121,7 @@ namespace
 			}
 		}
 
-		constexpr std::array<std::size_t, 9> integerIndices{ 7, 8, 13, 14, 15, 16, 17, 18, 19 };
+		constexpr std::array<std::size_t, 12> integerIndices{ 7, 8, 13, 14, 15, 16, 17, 18, 19, 21, 23, 25 };
 		for (const std::size_t i : integerIndices) {
 			if (!IsInteger(fields[i])) {
 				Log::Write("OSF settings returned an invalid integer for %s", Log::Narrow(kSettings[i].key).c_str());

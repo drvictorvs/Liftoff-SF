@@ -34,6 +34,7 @@ namespace Progress
 		double       fraction    = 0.0;   // 0..1, only meaningful if calibrated
 		bool         done        = false;
 		bool         saveLoading = false;
+		int          saveLoadsFinished = 0;  // save loads completed this session
 		std::wstring status;
 	};
 

@@ -8,8 +8,10 @@ mod and is not included in this source repository.
 The bar completes after SFSE reports that game data loading and its callbacks have finished,
 which is the latest version-independent startup milestone exposed by the SFSE messaging API.
 This can happen just before the main menu is rendered.
-When SFSE reports a save load, the same overlay reappears and shows the current save or tracked
-plugin/archive file. If SFSE does not send that event, Liftoff detects a read of a `.sfs` save.
+By default the overlay also shows for the first save load of a session (the one from the main
+menu) and never again after it; `ShowOnSaveLoad` (or "Show on save loads" in OSF Settings) can
+limit it to startup only or show it for every save load. During a shown save load it displays the
+current save or tracked plugin/archive file. If SFSE does not send that event, Liftoff detects a read of a `.sfs` save.
 The overlay closes after the player's cell and 3D are present for 45 consecutive game frames.
 If the player was already in a loaded cell when the save read was detected, Liftoff waits at
 least five seconds before accepting that state. The overlay may briefly appear while the save
@@ -19,7 +21,12 @@ The overlay appears at the desktop's bottom-left immediately and follows the gam
 when it appears or moves. Its taskbar button is created at startup, before Starfield's main
 window. As a separate Windows window, the overlay may not appear over exclusive-fullscreen rendering.
 The overlay stays visible through each load and fades out five seconds after the player is live.
-It stays hidden between startup and save loads. Clicking it does not dismiss it or take focus from
+It stays hidden between startup and save loads.
+
+By default the overlay copies Starfield's main menu: white uppercase text on a flat grey (#5D5D5D)
+panel with a white progress bar. The panel colour and opacity, text colour and size, capitals and
+bar colour are all adjustable. The game's menu typeface, NB Architekt, is used if it is installed
+in Windows; otherwise Bahnschrift, a similar typeface included in Windows 10 and 11. Clicking it does not dismiss it or take focus from
 the game.
 
 ## Build (Windows, VS Code)
@@ -46,8 +53,8 @@ The package also includes an OSF Settings schema at
 when OSF Settings is installed. The DLL calls the global Papyrus bridge without a quest or plugin
 file, polls for OSF changes, and writes them to `Liftoff.ini`. Changes take effect next launch.
 After changing OSF values, leave the game running for up to two seconds so the bridge can save them.
-The look settings include a transparent panel option and an optional Futura PT font choice; the
-font must be installed in Windows, or the overlay falls back to Segoe UI.
+The look settings include a transparent panel option; turning off the Starfield-style font uses
+Segoe UI.
 Without the compiled `.pex` or OSF Settings, Liftoff continues to use `Liftoff.ini` normally.
 No Liftoff `.esm` or quest attachment is needed: the DLL invokes the script's global function
 through the Papyrus VM. The `.psc` source and compiler helper are included in the source package.

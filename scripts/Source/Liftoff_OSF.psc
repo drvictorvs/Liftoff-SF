@@ -13,10 +13,10 @@ String Function ReadSettings() global
 	EndIf
 
 	String settings = BoolValue(OSFSettings.GetBool("liftoff", "enabled", True))
-	settings = settings + "|" + OSFSettings.GetString("liftoff", "barColor", "#4FC3F7")
+	settings = settings + "|" + OSFSettings.GetString("liftoff", "barColor", "#FFFFFF")
 	settings = settings + "|" + BoolValue(OSFSettings.GetBool("liftoff", "showStatus", True))
 	settings = settings + "|" + BoolValue(OSFSettings.GetBool("liftoff", "showPercent", True))
-	settings = settings + "|" + BoolValue(OSFSettings.GetBool("liftoff", "useStarfieldFont", False))
+	settings = settings + "|" + BoolValue(OSFSettings.GetBool("liftoff", "useStarfieldFont", True))
 	settings = settings + "|" + BoolValue(OSFSettings.GetBool("liftoff", "transparentBackground", False))
 	settings = settings + "|" + BoolValue(OSFSettings.GetBool("liftoff", "stayOnTop", True))
 	settings = settings + "|" + OSFSettings.GetInt("liftoff", "fadeMs", 500)
@@ -32,5 +32,12 @@ String Function ReadSettings() global
 	settings = settings + "|" + OSFSettings.GetInt("liftoff", "maxDumps", 60)
 	settings = settings + "|" + OSFSettings.GetInt("liftoff", "stackDepth", 32)
 	settings = settings + "|" + OSFSettings.GetInt("liftoff", "lookBackSeconds", 10)
+	; Added after the first 20; the DLL reads them in this order.
+	settings = settings + "|" + OSFSettings.GetString("liftoff", "panelColor", "#5D5D5D")
+	settings = settings + "|" + OSFSettings.GetInt("liftoff", "panelOpacity", 100)
+	settings = settings + "|" + OSFSettings.GetString("liftoff", "textColor", "#FFFFFF")
+	settings = settings + "|" + OSFSettings.GetInt("liftoff", "fontSize", 20)
+	settings = settings + "|" + BoolValue(OSFSettings.GetBool("liftoff", "uppercase", True))
+	settings = settings + "|" + OSFSettings.GetInt("liftoff", "showOnSaveLoad", 1)
 	Return settings
 EndFunction
