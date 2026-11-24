@@ -57,6 +57,7 @@ namespace
 
 	void LogMachine(const SFSEInterface* sfse)
 	{
+		Log::Write("Liftoff %d.%d.%d", LIFTOFF_VERSION_MAJOR, LIFTOFF_VERSION_MINOR, LIFTOFF_VERSION_PATCH);
 		const std::uint32_t version = sfse->runtimeVersion;
 		Log::Write("game version %u.%u.%u", (version >> 24) & 0xFF, (version >> 16) & 0xFF, (version >> 4) & 0xFFF);
 
@@ -126,9 +127,10 @@ namespace
 extern "C" {
 __declspec(dllexport) SFSEPluginVersionData SFSEPlugin_Version = {
 	SFSEPluginVersionData::kVersion,
-	1,                                                        // plugin version: bump for each release
+	// Version from CMakeLists.txt's project(), packed the way SFSE expects (major.minor.patch).
+	(LIFTOFF_VERSION_MAJOR << 24) | (LIFTOFF_VERSION_MINOR << 16) | (LIFTOFF_VERSION_PATCH << 4),
 	"Liftoff",                                                // name shown in sfse.txt
-	"YourName",                                               // <- put your name here
+	"drvictorvs",
 	SFSEPluginVersionData::kAddressIndependence_AddressLibraryV2,
 	SFSEPluginVersionData::kStructureIndependence_1_14_70_Layout,
 	{ 0 },                                                    // version list not needed

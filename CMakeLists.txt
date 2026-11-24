@@ -84,6 +84,10 @@ target_compile_definitions(Liftoff PRIVATE
 	UNICODE _UNICODE      # use the wide-character (W) versions of Windows functions
 	NOMINMAX              # stop windows.h from defining min/max macros
 	_WIN32_WINNT=0x0A00   # target Windows 10+
+	# The version in project() above is the only place to change it; the DLL reports it to SFSE.
+	LIFTOFF_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
+	LIFTOFF_VERSION_MINOR=${PROJECT_VERSION_MINOR}
+	LIFTOFF_VERSION_PATCH=${PROJECT_VERSION_PATCH}
 )
 
 target_link_libraries(Liftoff PRIVATE minhook commonlibsf gdiplus dxgi psapi user32 gdi32 shell32 ole32 uuid)
