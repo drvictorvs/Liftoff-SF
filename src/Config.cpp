@@ -70,7 +70,7 @@ Config LoadConfig(const std::wstring& ini)
 	c.enabled = ReadInt(ini, L"General", L"Enabled", 1) != 0;
 
 	c.barColor    = ParseColor(ReadString(ini, L"Look", L"BarColor", L""), c.barColor);
-	c.showStatus  = ReadInt(ini, L"Look", L"ShowStatus", 1) != 0;
+	c.showStatus  = ReadBoundedInt(ini, L"Look", L"ShowStatus", c.showStatus, 0, 2);
 	c.showPercent = ReadInt(ini, L"Look", L"ShowPercent", 1) != 0;
 	c.useStarfieldFont = ReadInt(ini, L"Look", L"UseStarfieldFont", 1) != 0;
 	c.panelColor  = ParseColor(ReadString(ini, L"Look", L"PanelColor", L""), c.panelColor);

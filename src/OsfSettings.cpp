@@ -114,7 +114,7 @@ namespace
 			return false;
 		}
 
-		constexpr std::array<std::size_t, 10> booleanIndices{ 0, 2, 3, 4, 5, 6, 10, 11, 12, 24 };
+		constexpr std::array<std::size_t, 9> booleanIndices{ 0, 3, 4, 5, 6, 10, 11, 12, 24 };
 		for (const std::size_t i : booleanIndices) {
 			if (!IsBoolean(fields[i])) {
 				Log::Write("OSF settings returned an invalid boolean for %s", Log::Narrow(kSettings[i].key).c_str());
@@ -122,7 +122,8 @@ namespace
 			}
 		}
 
-		constexpr std::array<std::size_t, 12> integerIndices{ 7, 8, 13, 14, 15, 16, 17, 18, 19, 21, 23, 25 };
+		// ShowStatus (2) was a boolean before it became 0-2; an older Liftoff_OSF.pex still sends 0/1.
+		constexpr std::array<std::size_t, 13> integerIndices{ 2, 7, 8, 13, 14, 15, 16, 17, 18, 19, 21, 23, 25 };
 		for (const std::size_t i : integerIndices) {
 			if (!IsInteger(fields[i])) {
 				Log::Write("OSF settings returned an invalid integer for %s", Log::Narrow(kSettings[i].key).c_str());

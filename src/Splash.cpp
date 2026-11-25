@@ -22,6 +22,27 @@ using namespace Gdiplus;
 
 namespace
 {
+	// Shortens a_text to fit a_maxWidth by cutting from the middle and keeping the extension:
+	// "Starfield - Meshes01.ba2" -> "Starfield - Mes....ba2". Text without a short extension is
+	// cut at the end instead. a_width measures a string in the same units as a_maxWidth.
+	template <class Measure>
+	std::wstring FitKeepingExtension(std::wstring a_text, float a_maxWidth, Measure&& a_width)
+	{
+		if (a_text.empty() || a_width(a_text) <= a_maxWidth)
+			return a_text;
+
+		std::wstring tail;
+		if (const auto dot = a_text.rfind(L'.');
+		    dot != std::wstring::npos && dot > 0 && a_text.size() - dot <= 6 && a_text.find(L' ', dot) == std::wstring::npos) {
+			tail = a_text.substr(dot);
+			a_text.erase(dot);
+		}
+		tail.insert(0, L"...");
+		while (!a_text.empty() && a_width(a_text + tail) > a_maxWidth)
+			a_text.pop_back();
+		return a_text + tail;
+	}
+
 	enum class Phase { Showing, Holding, Fading, Overlay, SaveLoading, Idle };
 
 	struct State
@@ -223,16 +244,31 @@ namespace
 				swprintf(buffer, 32, L"Measuring");
 			label = shown(buffer);
 		}
-		if (c.showStatus) {
-			const auto status = shown(snap.status);
-			if (g.hasGameFont) {
-				// Everything left of the label, with a gap the width of the text size.
-				RectF room = statusRect;
-				room.Width = textRow.Width - (label.empty() ? 0.f : measure(label) + em);
-				drawGameText(status, room, false);
-			} else {
-				gfx.DrawString(status.c_str(), -1, &font, statusRect, &left, &textBrush);
+		if (c.showStatus != 0) {
+			// Status texts are "<activity>  <file name>"; mode 1 keeps only the name.
+			std::wstring status = snap.status;
+			if (c.showStatus == 1) {
+				if (const auto gap = status.find(L"  "); gap != std::wstring::npos)
+					status.erase(0, gap + 2);
 			}
+			status = shown(std::move(status));
+
+			RectF room = statusRect;
+			if (g.hasGameFont)  // everything left of the label, with a gap the width of the text size
+				room.Width = textRow.Width - (label.empty() ? 0.f : measure(label) + em);
+			auto width = [&](const std::wstring& a_text) {
+				if (g.hasGameFont)
+					return measure(a_text);
+				RectF bounds;
+				gfx.MeasureString(a_text.c_str(), -1, &font, PointF(0, 0), &left, &bounds);
+				return bounds.Width;
+			};
+			status = FitKeepingExtension(std::move(status), room.Width, width);
+
+			if (g.hasGameFont)
+				drawGameText(status, room, false);
+			else
+				gfx.DrawString(status.c_str(), -1, &font, statusRect, &left, &textBrush);
 		}
 		if (!label.empty()) {
 			if (g.hasGameFont)

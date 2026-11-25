@@ -17,7 +17,10 @@ struct Config
 	COLORREF     textColor   = RGB(255, 255, 255);
 	int          fontSize    = 22;    // pixels on a 1080p screen, scaled to the monitor; the panel follows it
 	bool         uppercase   = true;
-	bool         showStatus  = true; // "Loading plugin Starfield.esm"
+	// What the game is loading right now: 0 = nothing, 1 = just the file name ("Starfield - Meshes01.ba2",
+	// shortened in the middle as "Starfield - Mes....ba2" if it doesn't fit), 2 = with the activity
+	// ("Opening archive  Starfield - Meshes01.ba2").
+	int          showStatus  = 1;
 	bool         showPercent = true;
 	// The game's own font, read from Data\Interface\fonts_<language>.swf (loose or in an archive, so
 	// font replacers apply). If that fails: NB Architekt if installed, else Bahnschrift. Off = Segoe UI.
