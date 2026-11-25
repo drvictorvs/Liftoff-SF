@@ -1,7 +1,9 @@
 #include "Splash.h"
+#include "FileTrace.h"
 #include "FileWatch.h"
 #include "Log.h"
 #include "Progress.h"
+#include "SwfFont.h"
 #include "Watchdog.h"
 
 #include <windows.h>
@@ -12,7 +14,9 @@ namespace Gdiplus { using std::min; using std::max; }
 #include <gdiplus.h>
 
 #include <cmath>
+#include <filesystem>
 #include <memory>
+#include <vector>
 
 using namespace Gdiplus;
 
@@ -32,6 +36,14 @@ namespace
 		bool                    gameWindowSeen = false;
 		BYTE                    alpha = 255;
 		bool                    inSaveLoad = false;  // a save load is running, shown or not
+
+		// Text size in pixels: FontSize is for a 1080p screen and scales with the monitor height.
+		float                   em = 20.f;
+		// The game's own menu font, read from Data\Interface\fonts_<language>.swf (see SwfFont.h);
+		// each glyph as a GDI+ path in font units.
+		SwfFont::Font           gameFont;
+		bool                    hasGameFont = false;
+		std::vector<std::unique_ptr<GraphicsPath>> glyphPaths;
 	};
 
 	// Only ever touched by the splash thread (after Start copies the config).
@@ -52,6 +64,60 @@ namespace
 		SetLayeredWindowAttributes(g.hwnd, RGB(0, 0, 0), alpha, flags);
 	}
 
+	// ------------------------------------------------------------------ the game's font
+
+	void LoadGameFont()
+	{
+		if (!g.cfg.useStarfieldFont)
+			return;
+		wchar_t exe[MAX_PATH * 2]{};
+		GetModuleFileNameW(nullptr, exe, MAX_PATH * 2);
+		const std::filesystem::path gameDir = std::filesystem::path(exe).parent_path();
+		wchar_t language[32]{};
+		GetPrivateProfileStringW(L"General", L"sLanguage", L"en", language, 32, (gameDir / L"Starfield.ini").c_str());
+
+		const ULONGLONG   started = GetTickCount64();
+		std::string       error;
+		FileTrace::QuietScope quiet;  // our own reads aren't game loading
+		if (!SwfFont::Load(gameDir / L"Data", Log::Narrow(language), Log::Narrow(g.cfg.gameFont), g.gameFont, error)) {
+			Log::Write("overlay font: game font not used (%s); using an installed font", error.c_str());
+			return;
+		}
+
+		// SWF glyphs are quadratic curves; GDI+ paths take cubic Beziers with the same shape.
+		g.glyphPaths.reserve(g.gameFont.glyphs.size());
+		for (const auto& glyph : g.gameFont.glyphs) {
+			auto  path = std::make_unique<GraphicsPath>(FillModeAlternate);
+			float x = 0, y = 0;
+			bool  open = false;
+			for (const auto& c : glyph.commands) {
+				switch (c.type) {
+				case SwfFont::Command::kMove:
+					if (open)
+						path->CloseFigure();
+					path->StartFigure();
+					open = true;
+					break;
+				case SwfFont::Command::kLine:
+					path->AddLine(x, y, c.x, c.y);
+					break;
+				case SwfFont::Command::kQuad:
+					path->AddBezier(x, y, x + (c.cx - x) * 2.f / 3.f, y + (c.cy - y) * 2.f / 3.f,
+						c.x + (c.cx - c.x) * 2.f / 3.f, c.y + (c.cy - c.y) * 2.f / 3.f, c.x, c.y);
+					break;
+				}
+				x = c.x;
+				y = c.y;
+			}
+			if (open)
+				path->CloseFigure();
+			g.glyphPaths.push_back(std::move(path));
+		}
+		g.hasGameFont = true;
+		Log::Write("overlay font: \"%s\" from %s (%zu glyphs, %llu ms)", g.gameFont.name.c_str(),
+			g.gameFont.source.c_str(), g.gameFont.glyphs.size(), GetTickCount64() - started);
+	}
+
 	// ------------------------------------------------------------------ one frame
 
 	void DrawFrame(HDC hdc)
@@ -61,10 +127,11 @@ namespace
 
 		Graphics gfx(g.backbuffer.get());
 		gfx.SetSmoothingMode(SmoothingModeAntiAlias);
+		gfx.SetPixelOffsetMode(PixelOffsetModeHighQuality);
 		gfx.SetTextRenderingHint(TextRenderingHintAntiAliasGridFit);
 
 		const Config& c = g.cfg;
-		const float   em = float(c.fontSize);
+		const float   em = g.em;
 		if (c.transparentBackground) {
 			gfx.Clear(Color(255, 0, 0, 0));
 		} else {
@@ -75,8 +142,8 @@ namespace
 			gfx.FillRectangle(&panel, 0.f, 0.f, w, h);
 		}
 
-		// The game's menu font is NB Architekt; Windows doesn't ship it, so Bahnschrift (in Windows
-		// 10 and 11, a similar square sans) stands in. Segoe UI when the Starfield font is off.
+		// Installed fonts, when the game's font couldn't be read: NB Architekt if installed, else
+		// Bahnschrift (in Windows 10 and 11, a similar square sans). Segoe UI when the Starfield font is off.
 		FontFamily architekt(L"NB Architekt");
 		FontFamily bahnschrift(L"Bahnschrift");
 		FontFamily segoe(L"Segoe UI");
@@ -104,25 +171,74 @@ namespace
 			return text;
 		};
 
+		// Text in the game's font: glyph paths scaled to the text size, laid out with the font's own
+		// advances, vertically centred on the capitals, trimmed with "..." when too long.
+		const float scale = em / SwfFont::Font::kEm;
+		auto glyphOf = [&](wchar_t a_char) -> std::size_t {
+			const auto it = g.gameFont.index.find(static_cast<char32_t>(a_char));
+			return it == g.gameFont.index.end() ? SIZE_MAX : it->second;
+		};
+		auto measure = [&](const std::wstring& a_text) {
+			float width = 0;
+			for (wchar_t ch : a_text) {
+				const auto i = glyphOf(ch);
+				width += i == SIZE_MAX ? em * 0.5f : g.gameFont.glyphs[i].advance * scale;
+			}
+			return width;
+		};
+		auto drawGameText = [&](std::wstring a_text, const RectF& a_rect, bool a_right) {
+			if (measure(a_text) > a_rect.Width) {
+				while (!a_text.empty() && measure(a_text + L"...") > a_rect.Width)
+					a_text.pop_back();
+				a_text += L"...";
+			}
+			float       x = a_right ? a_rect.X + a_rect.Width - measure(a_text) : a_rect.X;
+			const float baseline = a_rect.Y + a_rect.Height / 2 + g.gameFont.capHeight * scale / 2;
+			for (wchar_t ch : a_text) {
+				const auto i = glyphOf(ch);
+				if (i == SIZE_MAX) {
+					x += em * 0.5f;
+					continue;
+				}
+				Matrix place(scale, 0, 0, scale, x, baseline);
+				gfx.SetTransform(&place);
+				gfx.FillPath(&textBrush, g.glyphPaths[i].get());
+				x += g.gameFont.glyphs[i].advance * scale;
+			}
+			gfx.ResetTransform();
+		};
+
 		// Geometry scales with the font: at 20 px, text starts 26 px in, like the menu's rows.
 		const float padX = std::round(em * 1.3f);
 		const RectF textRow(padX, std::round(em * 0.55f), w - 2 * padX, std::round(em * 1.4f));
 		const RectF statusRect(textRow.X, textRow.Y, textRow.Width * 0.76f, textRow.Height);
+		std::wstring label;
+		if (c.showPercent) {
+			wchar_t buffer[32];
+			if (snap.saveLoading)
+				swprintf(buffer, 32, L"Loading");
+			else if (snap.calibrated || snap.done)
+				swprintf(buffer, 32, L"%d%%", int(snap.fraction * 100 + 0.5));
+			else
+				swprintf(buffer, 32, L"Measuring");
+			label = shown(buffer);
+		}
 		if (c.showStatus) {
 			const auto status = shown(snap.status);
-			gfx.DrawString(status.c_str(), -1, &font, statusRect, &left, &textBrush);
+			if (g.hasGameFont) {
+				// Everything left of the label, with a gap the width of the text size.
+				RectF room = statusRect;
+				room.Width = textRow.Width - (label.empty() ? 0.f : measure(label) + em);
+				drawGameText(status, room, false);
+			} else {
+				gfx.DrawString(status.c_str(), -1, &font, statusRect, &left, &textBrush);
+			}
 		}
-
-		if (c.showPercent) {
-			wchar_t label[32];
-			if (snap.saveLoading)
-				swprintf(label, 32, L"Loading");
-			else if (snap.calibrated || snap.done)
-				swprintf(label, 32, L"%d%%", int(snap.fraction * 100 + 0.5));
+		if (!label.empty()) {
+			if (g.hasGameFont)
+				drawGameText(label, textRow, true);
 			else
-				swprintf(label, 32, L"Measuring");
-			const auto text = shown(label);
-			gfx.DrawString(text.c_str(), -1, &font, textRow, &right, &textBrush);
+				gfx.DrawString(label.c_str(), -1, &font, textRow, &right, &textBrush);
 		}
 
 		const float barX = padX, barW = w - 2 * padX;
@@ -338,12 +454,16 @@ namespace
 		}
 
 		g.startTick = GetTickCount64();
-		// Height follows the font size: text row, bar and margins (66 px at the default 20 px).
+		LoadGameFont();
+
+		// Text size: FontSize is for a 1080p screen, scaled to this monitor's height. The height
+		// follows it: text row, bar and margins.
+		g.em = float(g.cfg.fontSize) * std::max(0.5f, float(GetSystemMetrics(SM_CYSCREEN)) / 1080.f);
 		{
-			const float em = float(g.cfg.fontSize);
+			const float em = g.em;
 			const float bottom = std::round(em * 0.55f) + std::round(em * 1.4f) + std::round(em * 0.45f) +
 			                     std::max(4.f, std::round(em * 0.3f)) + std::round(em * 0.6f);
-			g.width = std::max(kOverlayWidth, int(std::round(em * 22.f)));
+			g.width = std::max(kOverlayWidth, int(std::round(em * 25.f)));
 			g.height = int(bottom);
 		}
 		g.backbuffer = std::make_unique<Bitmap>(g.width, g.height, PixelFormat32bppARGB);

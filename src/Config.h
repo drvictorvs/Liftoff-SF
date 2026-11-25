@@ -15,11 +15,14 @@ struct Config
 	COLORREF     panelColor  = RGB(0x5D, 0x5D, 0x5D);
 	int          panelOpacity = 100;  // percent
 	COLORREF     textColor   = RGB(255, 255, 255);
-	int          fontSize    = 20;    // pixels; the panel's height follows it
+	int          fontSize    = 22;    // pixels on a 1080p screen, scaled to the monitor; the panel follows it
 	bool         uppercase   = true;
 	bool         showStatus  = true; // "Loading plugin Starfield.esm"
 	bool         showPercent = true;
-	bool         useStarfieldFont = true;  // NB Architekt if installed, else Bahnschrift; off = Segoe UI
+	// The game's own font, read from Data\Interface\fonts_<language>.swf (loose or in an archive, so
+	// font replacers apply). If that fails: NB Architekt if installed, else Bahnschrift. Off = Segoe UI.
+	bool         useStarfieldFont = true;
+	std::wstring gameFont    = L"$MAIN_Font_Bold";  // a fontconfig name, or a font name inside the SWF
 	bool         transparentBackground = false;
 
 	// Behaviour

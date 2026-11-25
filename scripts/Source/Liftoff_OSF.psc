@@ -36,8 +36,9 @@ String Function ReadSettings() global
 	settings = settings + "|" + OSFSettings.GetString("liftoff", "panelColor", "#5D5D5D")
 	settings = settings + "|" + OSFSettings.GetInt("liftoff", "panelOpacity", 100)
 	settings = settings + "|" + OSFSettings.GetString("liftoff", "textColor", "#FFFFFF")
-	settings = settings + "|" + OSFSettings.GetInt("liftoff", "fontSize", 20)
+	settings = settings + "|" + OSFSettings.GetInt("liftoff", "fontSize", 22)
 	settings = settings + "|" + BoolValue(OSFSettings.GetBool("liftoff", "uppercase", True))
 	settings = settings + "|" + OSFSettings.GetInt("liftoff", "showOnSaveLoad", 1)
+	settings = settings + "|" + OSFSettings.GetString("liftoff", "gameFont", "$MAIN_Font_Bold")
 	Return settings
 EndFunction

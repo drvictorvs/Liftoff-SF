@@ -63,6 +63,17 @@ FetchContent_Declare(minhook
 )
 FetchContent_MakeAvailable(minhook)
 
+# miniz: zlib decompression, to read the game's font from its interface archive and SWF.
+set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(BUILD_FUZZERS OFF CACHE BOOL "" FORCE)
+set(BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+FetchContent_Declare(miniz
+	URL https://github.com/richgel999/miniz/archive/refs/tags/3.0.2.zip
+	DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+)
+FetchContent_MakeAvailable(miniz)
+
 # ---------------------------------------------------------------------------
 # The plugin itself: a DLL called Liftoff.dll
 # ---------------------------------------------------------------------------
@@ -76,6 +87,7 @@ add_library(Liftoff SHARED
 	src/Progress.cpp
 	src/Stacks.cpp
 	src/Splash.cpp
+	src/SwfFont.cpp
 	src/Watchdog.cpp
 	src/GameReady.cpp
 )
@@ -90,7 +102,7 @@ target_compile_definitions(Liftoff PRIVATE
 	LIFTOFF_VERSION_PATCH=${PROJECT_VERSION_PATCH}
 )
 
-target_link_libraries(Liftoff PRIVATE minhook commonlibsf gdiplus dxgi psapi user32 gdi32 shell32 ole32 uuid)
+target_link_libraries(Liftoff PRIVATE minhook commonlibsf miniz gdiplus dxgi psapi user32 gdi32 shell32 ole32 uuid)
 
 if(MSVC)
 	target_compile_options(Liftoff PRIVATE /W4 /utf-8 /permissive-)

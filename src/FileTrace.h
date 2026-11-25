@@ -14,4 +14,14 @@ namespace FileTrace
 
 	// File opens made by this thread are not logged (used for the watchdog thread).
 	void IgnoreThread(unsigned long threadId);
+
+	// While one exists, file opens made by the current thread are not logged or counted (for
+	// Liftoff's own reads, such as the overlay font).
+	struct QuietScope
+	{
+		QuietScope();
+		~QuietScope();
+		QuietScope(const QuietScope&) = delete;
+		QuietScope& operator=(const QuietScope&) = delete;
+	};
 }

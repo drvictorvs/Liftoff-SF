@@ -22,7 +22,7 @@
 namespace
 {
 	constexpr ULONGLONG kPollIntervalMs = 2000;
-	constexpr std::size_t kSettingCount = 26;
+	constexpr std::size_t kSettingCount = 27;
 
 	struct Setting
 	{
@@ -58,6 +58,7 @@ namespace
 		{ L"Look", L"FontSize" },
 		{ L"Look", L"Uppercase" },
 		{ L"Behaviour", L"ShowOnSaveLoad" },
+		{ L"Look", L"GameFont" },
 	} };
 
 	std::wstring g_iniPath;

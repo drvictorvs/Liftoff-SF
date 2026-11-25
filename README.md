@@ -25,8 +25,11 @@ It stays hidden between startup and save loads.
 
 By default the overlay copies Starfield's main menu: white uppercase text on a flat grey (#5D5D5D)
 panel with a white progress bar. The panel colour and opacity, text colour and size, capitals and
-bar colour are all adjustable. The game's menu typeface, NB Architekt, is used if it is installed
-in Windows; otherwise Bahnschrift, a similar typeface included in Windows 10 and 11. Clicking it does not dismiss it or take focus from
+bar colour are all adjustable. The text uses the game's own menu font, read at startup from its
+interface files (`Data\Interface\fonts_<language>.swf` and `fontconfig_<language>.txt`, loose or in
+an archive), so nothing is bundled and font replacers apply too. If those can't be read, it uses
+NB Architekt if installed in Windows, otherwise Bahnschrift. Text size is given for a 1080p screen
+and scales with the monitor. Clicking it does not dismiss it or take focus from
 the game.
 
 ## Build (Windows, VS Code)

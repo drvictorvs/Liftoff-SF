@@ -33,6 +33,8 @@ namespace
 
 	// Stops infinite loops: writing the log line itself must not be traced.
 	thread_local bool t_busy = false;
+	// Set while Liftoff itself reads files (the overlay's font), so they don't count as game loading.
+	thread_local bool t_quiet = false;
 
 	constexpr ULONG kDirectoryFile = 0x00000001;  // FILE_DIRECTORY_FILE
 	constexpr ACCESS_MASK kWriteAccess = GENERIC_WRITE | FILE_WRITE_DATA | FILE_APPEND_DATA;
@@ -40,7 +42,7 @@ namespace
 	void Record(POBJECT_ATTRIBUTES attributes, NTSTATUS status, const LARGE_INTEGER& started,
 	            ACCESS_MASK access, ULONG options)
 	{
-		if (t_busy)
+		if (t_busy || t_quiet)
 			return;
 		if (status < 0 && !g_cfg.logFailedOpens)
 			return;
@@ -216,4 +218,7 @@ namespace FileTrace
 	{
 		g_ignoredThread.store(threadId, std::memory_order_relaxed);
 	}
+
+	QuietScope::QuietScope() { t_quiet = true; }
+	QuietScope::~QuietScope() { t_quiet = false; }
 }

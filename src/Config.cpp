@@ -77,6 +77,8 @@ Config LoadConfig(const std::wstring& ini)
 	c.panelOpacity = ReadBoundedInt(ini, L"Look", L"PanelOpacity", c.panelOpacity, 0, 100);
 	c.textColor   = ParseColor(ReadString(ini, L"Look", L"TextColor", L""), c.textColor);
 	c.fontSize    = ReadBoundedInt(ini, L"Look", L"FontSize", c.fontSize, 10, 48);
+	if (const auto font = ReadString(ini, L"Look", L"GameFont", L""); !font.empty())
+		c.gameFont = font;
 	c.uppercase   = ReadInt(ini, L"Look", L"Uppercase", 1) != 0;
 	c.transparentBackground = ReadInt(ini, L"Look", L"TransparentBackground", 0) != 0;
 
