@@ -18,19 +18,22 @@ set(CMAKE_POLICY_DEFAULT_CMP0091 NEW)  # ...and lets it use the same static runt
 
 # ---------------------------------------------------------------------------
 # CommonLibSF: used to detect when the player is present in the loaded world.
-# Its source is GPL-3.0-or-later with a modding/linking exception; package_source
+# Its source is GPL-3.0-or-later with a modding/linking exception; source_package
 # below includes the corresponding sources and licenses for releases.
 # ---------------------------------------------------------------------------
 set(SPDLOG_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(SPDLOG_BUILD_EXAMPLE OFF CACHE BOOL "" FORCE)
 set(SPDLOG_BUILD_BENCH OFF CACHE BOOL "" FORCE)
 set(SPDLOG_INSTALL ON CACHE BOOL "" FORCE)
+# OVERRIDE_FIND_PACKAGE: CommonLib's find_package(spdlog) gets this copy. (Pointing spdlog_DIR at
+# spdlog's build folder instead stopped working in CMake 4, which refuses to include export() files.)
+unset(spdlog_DIR CACHE)
 FetchContent_Declare(spdlog
 	URL https://github.com/gabime/spdlog/archive/refs/tags/v1.17.0.zip
 	DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+	OVERRIDE_FIND_PACKAGE
 )
 FetchContent_MakeAvailable(spdlog)
-set(spdlog_DIR "${spdlog_BINARY_DIR}" CACHE PATH "spdlog package directory" FORCE)
 
 FetchContent_Declare(commonlib_shared
 	URL https://github.com/libxse/commonlib-shared/archive/def5f6c93db28d20307d8e55a62118fc1c4f0b6c.zip
@@ -142,7 +145,8 @@ add_custom_target(package_mod
 # with plugin binaries. Keep it separate from the installable game-data zip.
 set(SOURCE_PACKAGE_DIR "${CMAKE_BINARY_DIR}/source-package")
 set(SOURCE_PACKAGE_ZIP "${CMAKE_BINARY_DIR}/Liftoff-${PROJECT_VERSION}-source.zip")
-add_custom_target(package_source
+# Not "package_source": spdlog's install step includes CPack, which reserves that name.
+add_custom_target(source_package
 	COMMAND ${CMAKE_COMMAND} -E rm -rf "${SOURCE_PACKAGE_DIR}"
 	COMMAND ${CMAKE_COMMAND} -E make_directory "${SOURCE_PACKAGE_DIR}/src" "${SOURCE_PACKAGE_DIR}/scripts" "${SOURCE_PACKAGE_DIR}/dist" "${SOURCE_PACKAGE_DIR}/third_party"
 	COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/src" "${SOURCE_PACKAGE_DIR}/src"

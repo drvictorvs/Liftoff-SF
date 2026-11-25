@@ -71,7 +71,7 @@ and collect follow-up samples for one minute.
 
 `Ctrl+Shift+P` → **CMake: Select Variant** → Release, then **CMake: Build Target** → `package_mod`.
 The upload-ready zip appears in `build\`.
-Also build `package_source` and distribute the resulting `Liftoff-1.0.0-source.zip` alongside
+Also build `source_package` and distribute the resulting `Liftoff-1.0.0-source.zip` alongside
 the plugin package; it contains Liftoff and the corresponding CommonLibSF, commonlib-shared,
 spdlog, and MinHook sources and license files.
 
