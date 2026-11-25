@@ -9,6 +9,11 @@
 //   3. Later it sends us messages; kMessage_PostPostDataLoad means all game
 //      data-load callbacks have finished, which is our "100%".
 // ---------------------------------------------------------------------------
+// CommonLibSF must come before anything that includes <windows.h>, whose
+// macros (ERROR etc.) break REX/LOG.h.
+#include <SFSE/Impl/PCH.h>
+#include <SFSE/API.h>
+
 #include "Config.h"
 #include "FileTrace.h"
 #include "FileWatch.h"
@@ -20,7 +25,6 @@
 #include "Watchdog.h"
 #include "sfse_api.h"
 
-#include <SFSE/API.h>
 #include <windows.h>
 #include <shlobj.h>
 

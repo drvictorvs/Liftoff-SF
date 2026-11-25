@@ -119,9 +119,9 @@ endif()
 set(STARFIELD_DIR "" CACHE PATH "Starfield install folder; if set, the DLL is copied there after each build")
 if(STARFIELD_DIR)
 	add_custom_command(TARGET Liftoff POST_BUILD
-		COMMAND ${CMAKE_COMMAND} -E make_directory "${STARFIELD_DIR}/Data/SFSE/Plugins"
-		COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:Liftoff>" "${STARFIELD_DIR}/Data/SFSE/Plugins/"
-		COMMENT "Deploying Liftoff.dll to ${STARFIELD_DIR}/Data/SFSE/Plugins"
+		COMMAND ${CMAKE_COMMAND} -E make_directory "${STARFIELD_DIR}/SFSE/Plugins"
+		COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:Liftoff>" "${STARFIELD_DIR}/SFSE/Plugins/"
+		COMMENT "Deploying Liftoff.dll to ${STARFIELD_DIR}/SFSE/Plugins"
 	)
 endif()
 

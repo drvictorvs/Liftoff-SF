@@ -1,11 +1,15 @@
+// CommonLibSF headers come first: <windows.h> (pulled in by Watchdog.h) defines
+// macros such as ERROR that break REX/LOG.h.
+#include <SFSE/Impl/PCH.h>
+#include <RE/P/PlayerCharacter.h>
+#include <SFSE/API.h>
+
 #include "GameReady.h"
 
 #include "Log.h"
 #include "Progress.h"
 #include "Watchdog.h"
 
-#include <RE/P/PlayerCharacter.h>
-#include <SFSE/API.h>
 #include <windows.h>
 
 #include <atomic>
