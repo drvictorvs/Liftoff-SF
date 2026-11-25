@@ -24,6 +24,7 @@ set(CMAKE_POLICY_DEFAULT_CMP0091 NEW)  # ...and lets it use the same static runt
 set(SPDLOG_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(SPDLOG_BUILD_EXAMPLE OFF CACHE BOOL "" FORCE)
 set(SPDLOG_BUILD_BENCH OFF CACHE BOOL "" FORCE)
+set(SPDLOG_WCHAR_SUPPORT ON CACHE BOOL "" FORCE)  # CommonLib logs wide strings (its spdlog "wchar" feature)
 set(SPDLOG_INSTALL ON CACHE BOOL "" FORCE)
 # OVERRIDE_FIND_PACKAGE: CommonLib's find_package(spdlog) gets this copy. (Pointing spdlog_DIR at
 # spdlog's build folder instead stopped working in CMake 4, which refuses to include export() files.)
