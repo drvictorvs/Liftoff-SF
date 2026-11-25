@@ -89,8 +89,10 @@ add_library(Liftoff SHARED
 	src/FileTrace.cpp
 	src/Log.cpp
 	src/Progress.cpp
+	src/SfsePlugins.cpp
 	src/Stacks.cpp
 	src/Splash.cpp
+	src/Summary.cpp
 	src/SwfFont.cpp
 	src/Watchdog.cpp
 	src/GameReady.cpp

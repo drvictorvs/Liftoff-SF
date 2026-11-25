@@ -8,6 +8,7 @@
 // The first launch has nothing to compare against, so the bar just animates.
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace Progress
 {
@@ -39,4 +40,18 @@ namespace Progress
 	};
 
 	Snapshot Get();
+
+	// What happened during startup, in order, for the summary written after it.
+	struct Event
+	{
+		std::wstring key;
+		std::wstring status;  // the overlay text at that moment, e.g. "Loading plugin  Starfield.esm"
+		double       ms = 0;  // since Init()
+	};
+	struct Timeline
+	{
+		std::vector<Event> events;
+		double             finishedMs = -1;  // when Finish() ran; < 0 = not yet
+	};
+	Timeline GetTimeline();
 }

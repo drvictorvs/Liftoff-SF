@@ -41,7 +41,9 @@
       { "key": "trackedExtensions", "label": "Tracked file extensions", "type": "string", "default": ".esm,.esp,.esl,.ba2", "maxLength": 256,
         "hint": "Comma-, semicolon-, or space-separated extensions. A leading dot is optional." },
       { "key": "logAllFiles", "label": "Log every opened file", "type": "bool", "default": false,
-        "hint": "Debug option. Creates a large log and may slow startup." }
+        "hint": "Debug option. Creates a large log and may slow startup." },
+      { "key": "trackSfsePlugins", "label": "Time SFSE plugins", "type": "bool", "default": true,
+        "hint": "Time each SFSE plugin as it loads (the DLL, its Preload and Load, and its message handlers), log it, and show it on the overlay." }
     ],
     "File diagnostics": [
       { "key": "logFiles", "label": "Log file-open durations", "type": "bool", "default": true },
@@ -49,7 +51,11 @@
       { "key": "minOpenMs", "label": "Minimum open duration (ms)", "type": "int", "default": 0, "min": 0, "max": 60000,
         "hint": "Only log file opens that take at least this long." },
       { "key": "maxFileLines", "label": "Maximum file log lines", "type": "int", "default": 100000, "min": 0, "max": 5000000,
-        "hint": "Set to 0 to disable the limit." }
+        "hint": "Set to 0 to disable the limit." },
+      { "key": "startupSummary", "label": "Startup summary", "type": "bool", "default": true,
+        "hint": "After startup, write a summary to Liftoff.log: the longest stretches between loading steps, the SFSE plugins slowest first, and the files that took the longest to open and read." },
+      { "key": "summaryLines", "label": "Summary rows per table", "type": "int", "default": 25, "min": 0, "max": 100000,
+        "hint": "Set to 0 to list every row." }
     ],
     "Watchdog": [
       { "key": "stallSeconds", "label": "Stall threshold (s)", "type": "int", "default": 3, "min": 1, "max": 600,

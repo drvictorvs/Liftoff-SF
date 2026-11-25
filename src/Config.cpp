@@ -91,11 +91,14 @@ Config LoadConfig(const std::wstring& ini)
 	if (!ext.empty())
 		c.trackedExtensions = ParseExtensions(ext);
 	c.logAllFiles = ReadInt(ini, L"Tracking", L"LogAllFiles", 0) != 0;
+	c.trackSfsePlugins = ReadInt(ini, L"Tracking", L"SfsePlugins", 1) != 0;
 
 	c.logFiles = ReadInt(ini, L"Files", L"LogFiles", 1) != 0;
 	c.logFailedOpens = ReadInt(ini, L"Files", L"LogFailedOpens", 0) != 0;
 	c.minOpenMs = ReadBoundedInt(ini, L"Files", L"MinOpenMs", c.minOpenMs, 0, 60000);
 	c.maxFileLines = ReadBoundedInt(ini, L"Files", L"MaxFileLines", c.maxFileLines, 0, 5000000);
+	c.startupSummary = ReadInt(ini, L"Files", L"StartupSummary", 1) != 0;
+	c.summaryLines = ReadBoundedInt(ini, L"Files", L"SummaryLines", c.summaryLines, 0, 100000);
 
 	c.stallSeconds = ReadBoundedInt(ini, L"Watchdog", L"StallSeconds", c.stallSeconds, 1, 600);
 	c.sampleSeconds = ReadBoundedInt(ini, L"Watchdog", L"SampleSeconds", c.sampleSeconds, 1, 600);

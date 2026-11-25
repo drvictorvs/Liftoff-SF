@@ -41,12 +41,18 @@ struct Config
 
 	// Debug aid: write EVERY file the game opens to Liftoff.log (big log, slower start).
 	bool logAllFiles = false;
+	// Time the other SFSE plugins: DLL load, SFSEPlugin_Preload/Load and their message handlers.
+	bool trackSfsePlugins = true;
 
 	// File-open diagnostics and save-load sampling, merged from LoadTrace.
 	bool logFiles = true;
 	bool logFailedOpens = false;
 	int  minOpenMs = 0;
 	int  maxFileLines = 100000;
+	// After startup, write a summary to Liftoff.log: the longest stretches between loading steps, the
+	// SFSE plugins, and the files the game spent the most time opening and reading.
+	bool startupSummary = true;
+	int  summaryLines = 25;  // rows per table; 0 = every row
 	int  stallSeconds = 3;
 	int  sampleSeconds = 5;
 	int  maxDumps = 60;

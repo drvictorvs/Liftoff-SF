@@ -67,6 +67,30 @@ Liftoff also logs file-open durations, periodic CPU/disk/memory samples, and thr
 save loads or when the game window stops responding. Press **Ctrl+Shift+F9** to add a log marker
 and collect follow-up samples for one minute.
 
+### SFSE plugins
+
+Liftoff starts in SFSE's preload phase, before the other plugins load, and times each SFSE plugin
+as SFSE loads it: loading its DLL (including the DLL's own startup code), its `SFSEPlugin_Preload`
+and `SFSEPlugin_Load`, and its handlers for SFSE's messages (data loaded, saves, save loads). The
+overlay shows the plugin being loaded, and each step is a line in the log; handlers that take 1 ms
+or more are logged every time, including during saves and save loads. Liftoff only redirects SFSE's
+own calls to `LoadLibrary` and `GetProcAddress` and its `RegisterListener`, so nothing else in the
+game is affected. The preloads of plugins whose files sort before `Liftoff.dll` run before Liftoff
+and aren't timed. `SfsePlugins` (or "Time SFSE plugins" in OSF Settings) turns this off.
+
+### Startup summary
+
+Two seconds after the game has loaded its data, Liftoff writes a summary to the log:
+
+- the longest stretches between loading steps, with the step the game was on when each began;
+- the SFSE plugins, slowest first, with the time for each part and each startup message;
+- the files the game spent the most time opening and reading, with read counts and sizes, and the
+  totals by file type.
+
+File times are added up over all threads, so together they can exceed the startup time. Reads that
+the game starts asynchronously are counted but not timed. After the summary, Liftoff stops timing
+reads. `StartupSummary` and `SummaryLines` (rows per table) control it.
+
 ## Release
 
 `Ctrl+Shift+P` → **CMake: Select Variant** → Release, then **CMake: Build Target** → `package_mod`.
@@ -79,10 +103,12 @@ spdlog, and MinHook sources and license files.
 
 | File | What it does |
 |---|---|
-| `src/main.cpp` | SFSE entry points: version data, `SFSEPlugin_Load`, message handler |
+| `src/main.cpp` | SFSE entry points: version data, `SFSEPlugin_Preload`, `SFSEPlugin_Load`, message handler |
 | `src/sfse_api.h` | The few SFSE structures we need (from SFSE's MIT-licensed PluginAPI.h) |
 | `src/FileWatch.cpp` | Hooks `CreateFileW/A/2` with MinHook to see which `.esm`/`.ba2` files load |
-| `src/FileTrace.cpp` | Logs native file-open durations and reports tracked files during save loads |
+| `src/FileTrace.cpp` | Logs native file-open durations, adds up open and read time per file until the startup summary, and reports tracked files during save loads |
+| `src/SfsePlugins.cpp` | Times other SFSE plugins: DLL load, `SFSEPlugin_Preload`/`Load`, message handlers |
+| `src/Summary.cpp` | Writes the startup summary to the log |
 | `src/Watchdog.cpp` | Samples process resources and captures thread stacks for save loads and stalls |
 | `src/Stacks.cpp` | Captures and describes thread call stacks |
 | `src/Progress.cpp` | Turns file milestones into a percentage using the previous launch's timings |

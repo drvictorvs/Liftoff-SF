@@ -27,6 +27,8 @@ namespace
 
 	// --- this run ---
 	std::vector<std::pair<std::wstring, double>> g_events;  // key, ms since start
+	std::vector<std::wstring>                    g_eventStatus;  // overlay text for each event
+	double       g_finishedMs      = -1;
 	std::unordered_set<std::wstring>             g_seen;
 	double       g_reachedFraction = 0;  // best fraction confirmed by a milestone
 	double       g_shownFraction   = 0;  // what the bar displays (never goes backwards)
@@ -115,6 +117,7 @@ namespace Progress
 
 		const double ms = ElapsedMs();
 		g_events.emplace_back(k, ms);
+		g_eventStatus.emplace_back(status);
 
 		if (auto it = g_previousFraction.find(k); it != g_previousFraction.end())
 			g_reachedFraction = std::max(g_reachedFraction, it->second);
@@ -130,6 +133,7 @@ namespace Progress
 			g_status = L"Ready";
 
 		const double total = ElapsedMs();
+		g_finishedMs = total;
 		Log::Write("startup finished after %.1f s (%zu milestones)", total / 1000.0, g_events.size());
 		SaveProfile(total);
 	}
@@ -213,5 +217,16 @@ namespace Progress
 		g_shownFraction = std::max(g_shownFraction, estimate);
 		s.fraction      = g_shownFraction;
 		return s;
+	}
+
+	Timeline GetTimeline()
+	{
+		std::lock_guard guard(g_lock);
+		Timeline timeline;
+		timeline.finishedMs = g_finishedMs;
+		timeline.events.reserve(g_events.size());
+		for (std::size_t i = 0; i < g_events.size(); ++i)
+			timeline.events.push_back({ g_events[i].first, g_eventStatus[i], g_events[i].second });
+		return timeline;
 	}
 }

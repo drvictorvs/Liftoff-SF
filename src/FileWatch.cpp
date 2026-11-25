@@ -7,6 +7,7 @@
 
 #include <atomic>
 #include <cwctype>
+#include <vector>
 
 namespace
 {
@@ -21,6 +22,7 @@ namespace
 	CreateFile2_t g_original2 = nullptr;
 
 	std::vector<std::wstring> g_extensions;  // set once before hooks go live, read-only afterwards
+	std::vector<LPVOID>       g_targets;     // the hooked functions, to switch off only these
 	std::atomic<bool>         g_installed{ false };
 	bool                      g_logAll    = false;
 
@@ -123,7 +125,9 @@ namespace
 	bool HookApi(const char* function, LPVOID detour, LPVOID* original)
 	{
 		for (const wchar_t* module : { L"kernelbase.dll", L"kernel32.dll" }) {
-			if (MH_CreateHookApi(module, function, detour, original) == MH_OK) {
+			LPVOID target = nullptr;
+			if (MH_CreateHookApiEx(module, function, detour, original, &target) == MH_OK) {
+				g_targets.push_back(target);
 				Log::Write("hooked %s in %s", function, Log::Narrow(module).c_str());
 				return true;
 			}
@@ -140,7 +144,9 @@ namespace FileWatch
 		g_extensions = trackedExtensions;
 		g_logAll     = logAllFiles;
 
-		if (MH_Initialize() != MH_OK) {
+		// FileTrace may have initialised MinHook already; that's fine.
+		const MH_STATUS initialize = MH_Initialize();
+		if (initialize != MH_OK && initialize != MH_ERROR_ALREADY_INITIALIZED) {
 			Log::Write("MinHook failed to initialise");
 			return false;
 		}
@@ -164,7 +170,10 @@ namespace FileWatch
 			return;  // already off (both the timeout and "data loaded" can call this)
 		// Disable, but don't MH_Uninitialize(): another thread could be inside
 		// a hook right now, and freeing the trampolines under it would crash.
-		MH_DisableHook(MH_ALL_HOOKS);
+		// Only these hooks: FileTrace's stay on.
+		for (LPVOID target : g_targets)
+			MH_QueueDisableHook(target);
+		MH_ApplyQueued();
 		Log::Write("file hooks disabled");
 	}
 }

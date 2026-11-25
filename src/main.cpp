@@ -4,9 +4,12 @@
 // How SFSE uses this file:
 //   1. It reads SFSEPlugin_Version (below) without running anything, to decide
 //      whether this DLL is compatible with the installed game.
-//   2. Very early in the game's startup, before the game window exists,
-//      it calls SFSEPlugin_Load. That's where we set everything up.
-//   3. Later it sends us messages; kMessage_PostPostDataLoad means all game
+//   2. Very early in the game's startup, before the game's own globals are set up,
+//      it calls SFSEPlugin_Preload. That's where the overlay and the hooks start,
+//      so the other SFSE plugins can be timed as SFSE loads them.
+//   3. Once every plugin is preloaded, it calls each SFSEPlugin_Load; ours sets up
+//      what needs CommonLibSF and registers for SFSE's messages.
+//   4. Later it sends us messages; kMessage_PostPostDataLoad means all game
 //      data-load callbacks have finished, which is our "100%".
 // ---------------------------------------------------------------------------
 // CommonLibSF must come before anything that includes <windows.h>, whose
@@ -21,7 +24,9 @@
 #include "Log.h"
 #include "OsfSettings.h"
 #include "Progress.h"
+#include "SfsePlugins.h"
 #include "Splash.h"
+#include "Summary.h"
 #include "Watchdog.h"
 #include "sfse_api.h"
 
@@ -34,7 +39,9 @@
 
 namespace
 {
-	HMODULE g_self = nullptr;
+	HMODULE g_self      = nullptr;
+	bool    g_preloaded = false;  // SFSEPlugin_Preload ran
+	bool    g_running   = false;  // the overlay and hooks are active
 
 	// The folder this DLL lives in, e.g. C:\...\Starfield\Data\SFSE\Plugins\  (with trailing slash)
 	std::wstring PluginFolder()
@@ -97,6 +104,7 @@ namespace
 		case SFSEMessagingInterface::kMessage_PostLoad:
 			// Don't replace the live file activity status with a generic message.
 			Log::Write("SFSE says: extender plugins loaded");
+			SfsePlugins::LogLoadTotals();
 			break;
 		case SFSEMessagingInterface::kMessage_PostDataLoad:
 			Log::Write("SFSE says: game data loaded; waiting for data-load callbacks");
@@ -104,8 +112,10 @@ namespace
 		case SFSEMessagingInterface::kMessage_PostPostDataLoad:
 			Log::Write("SFSE says: game data-load callbacks finished");
 			Progress::Finish();      // saves timings; the splash sees "done" and fades out
+			Summary::Schedule();     // a few seconds later, once the other plugins' handlers have run
 			break;
 		case SFSEMessagingInterface::kMessage_PreLoadGame:
+			Summary::WriteNow();     // if it hasn't been written yet
 			Progress::BeginSaveLoad(Log::Widen(saveName));
 			Watchdog::LoadStarted(saveName);
 			GameReady::Begin(true);
@@ -143,49 +153,79 @@ __declspec(dllexport) SFSEPluginVersionData SFSEPlugin_Version = {
 };
 }
 
+namespace
+{
+	// Everything that doesn't need CommonLibSF: log, settings, progress, hooks, overlay.
+	// Returns false if Liftoff is turned off.
+	bool StartEarly(const SFSEInterface* sfse)
+	{
+		const std::wstring userFolder   = SfseUserFolder();
+		const std::wstring pluginFolder = PluginFolder();
+
+		Log::Open(userFolder + L"Logs\\Liftoff.log");
+		Log::Write(g_preloaded ? "Liftoff loaded (SFSE preload)"
+		                       : "Liftoff loaded (SFSE load; this SFSE didn't preload it, so other plugins aren't timed)");
+		LogMachine(sfse);
+
+		const Config cfg = LoadConfig(pluginFolder + L"Liftoff.ini");
+		if (!cfg.enabled) {
+			Log::Write("disabled in Liftoff.ini");
+			return false;
+		}
+
+		// Order matters: Progress must be ready before hooks start reporting to it.
+		Progress::Init(userFolder + L"Liftoff_profile.txt");
+		Summary::Start(cfg);
+		if (cfg.trackSfsePlugins && g_preloaded)
+			SfsePlugins::Install(sfse, g_self);
+		FileWatch::Install(cfg.trackedExtensions, cfg.logAllFiles);
+		FileTrace::Install(cfg);
+		Watchdog::Start(cfg);
+		Splash::Start(cfg);
+		return true;
+	}
+}
+
+// Runs before any plugin's SFSEPlugin_Load, so the overlay is up and the hooks are in place while
+// SFSE loads the rest. Once the hooks are active this must return true: if it didn't, SFSE would
+// unload the DLL from under them.
+extern "C" __declspec(dllexport) bool SFSEPlugin_Preload(const SFSEInterface* sfse)
+{
+	g_preloaded = true;
+	g_running = StartEarly(sfse);
+	return true;
+}
+
 extern "C" __declspec(dllexport) bool SFSEPlugin_Load(const SFSEInterface* sfse)
 {
 	SFSE::Init(reinterpret_cast<const SFSE::LoadInterface*>(sfse), { .log = false, .hook = false });
 
-	const std::wstring userFolder   = SfseUserFolder();
-	const std::wstring pluginFolder = PluginFolder();
-
-	Log::Open(userFolder + L"Logs\\Liftoff.log");
-	Log::Write("Liftoff loaded");
-	LogMachine(sfse);
-
-	const std::wstring configPath = pluginFolder + L"Liftoff.ini";
-	const Config cfg = LoadConfig(configPath);
-	OsfSettings::Start(configPath);
-	if (!cfg.enabled) {
-		Log::Write("disabled in Liftoff.ini");
-		return true;
-	}
-
 	auto* messaging = static_cast<SFSEMessagingInterface*>(sfse->QueryInterface(kInterface_Messaging));
-	if (!messaging) {
-		Log::Write("no messaging interface; cannot tell when loading ends, so staying off");
-		return false;
-	}
-	if (!messaging->RegisterListener(sfse->GetPluginHandle(), "SFSE", OnSfseMessage)) {
-		Log::Write("could not register for SFSE messages");
-		return false;
+	if (!g_preloaded) {
+		// Nothing is running yet, so Liftoff can still back out.
+		if (!messaging) {
+			Log::Open(SfseUserFolder() + L"Logs\\Liftoff.log");
+			Log::Write("no messaging interface; cannot tell when loading ends, so staying off");
+			return false;
+		}
+		g_running = StartEarly(sfse);
 	}
 
-	// Order matters: Progress must be ready before hooks start reporting to it.
-	Progress::Init(userFolder + L"Liftoff_profile.txt");
+	OsfSettings::Start(PluginFolder() + L"Liftoff.ini");
+	if (!g_running)
+		return true;
+
+	// From here on the hooks are active, so this returns true even if something is missing.
+	if (!messaging || !messaging->RegisterListener(sfse->GetPluginHandle(), "SFSE", OnSfseMessage))
+		Log::Write("could not register for SFSE messages; the overlay will close on its timeout");
 	if (!GameReady::Start())
-		return false;
-	FileWatch::Install(cfg.trackedExtensions, cfg.logAllFiles);
-	FileTrace::Install(cfg);
-	Watchdog::Start(cfg);
-	Splash::Start(cfg);
+		Log::Write("save-load overlays will close on their timeout");
 	return true;
 }
 
 BOOL APIENTRY DllMain(HMODULE module, DWORD reason, LPVOID)
 {
-	// Keep DllMain minimal: Windows holds a lock while it runs. Real work goes in SFSEPlugin_Load.
+	// Keep DllMain minimal: Windows holds a lock while it runs. Real work goes in SFSEPlugin_Preload.
 	if (reason == DLL_PROCESS_ATTACH) {
 		g_self = module;
 		DisableThreadLibraryCalls(module);

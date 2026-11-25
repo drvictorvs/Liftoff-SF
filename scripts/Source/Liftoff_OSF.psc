@@ -40,5 +40,8 @@ String Function ReadSettings() global
 	settings = settings + "|" + BoolValue(OSFSettings.GetBool("liftoff", "uppercase", True))
 	settings = settings + "|" + OSFSettings.GetInt("liftoff", "showOnSaveLoad", 1)
 	settings = settings + "|" + OSFSettings.GetString("liftoff", "gameFont", "$MAIN_Font_Bold")
+	settings = settings + "|" + BoolValue(OSFSettings.GetBool("liftoff", "trackSfsePlugins", True))
+	settings = settings + "|" + BoolValue(OSFSettings.GetBool("liftoff", "startupSummary", True))
+	settings = settings + "|" + OSFSettings.GetInt("liftoff", "summaryLines", 25)
 	Return settings
 EndFunction
