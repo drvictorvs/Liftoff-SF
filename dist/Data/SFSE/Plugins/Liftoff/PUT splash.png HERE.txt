@@ -1,3 +1,0 @@
-Put an image called splash.png in this folder to use it as the splash screen.
-PNG or JPG both work (for JPG, change Image= in Liftoff.ini).
-A 16:9 image such as 1920x1080 looks best. Without one, Liftoff draws a star field.

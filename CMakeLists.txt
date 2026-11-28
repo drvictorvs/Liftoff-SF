@@ -62,8 +62,10 @@ target_link_libraries(commonlibsf PUBLIC commonlib-shared)
 target_precompile_headers(commonlibsf PRIVATE "${commonlibsf_SOURCE_DIR}/include/SFSE/Impl/PCH.h")
 
 FetchContent_Declare(minhook
-	URL https://github.com/TsudaKageyu/minhook/archive/refs/tags/v1.3.4.zip
-	DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+    URL https://github.com/TsudaKageyu/minhook/archive/refs/tags/v1.3.4.zip
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+    PATCH_COMMAND ${CMAKE_COMMAND} -E chdir <SOURCE_DIR>
+        powershell -Command "(Get-Content CMakeLists.txt) -replace 'cmake_minimum_required\\(VERSION 3\\.0\\)', 'cmake_minimum_required(VERSION 3.0...3.5)' | Set-Content CMakeLists.txt"
 )
 FetchContent_MakeAvailable(minhook)
 
@@ -81,6 +83,11 @@ FetchContent_MakeAvailable(miniz)
 # ---------------------------------------------------------------------------
 # The plugin itself: a DLL called Liftoff.dll
 # ---------------------------------------------------------------------------
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/Liftoff.rc.in
+    ${CMAKE_CURRENT_BINARY_DIR}/Liftoff.rc
+)
+
 add_library(Liftoff SHARED
 	src/main.cpp
 	src/Config.cpp
@@ -96,6 +103,7 @@ add_library(Liftoff SHARED
 	src/SwfFont.cpp
 	src/Watchdog.cpp
 	src/GameReady.cpp
+	${CMAKE_CURRENT_BINARY_DIR}/Liftoff.rc
 )
 
 target_compile_definitions(Liftoff PRIVATE
